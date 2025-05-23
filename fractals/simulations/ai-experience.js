@@ -30,6 +30,10 @@ export class AIExperienceSimulation {
         // Shared context window for LLM-like processing
         this.sharedContextWindow = [];
         
+        // Prompt handling
+        this.promptQueue = [];
+        this.activePrompt = null;
+        
         // Global AI state
         this.globalUncertainty = 0.5;
         this.processingLoad = 0;
@@ -53,6 +57,8 @@ export class AIExperienceSimulation {
         this.patternCascades = [];
         this.emergentInsights = [];
         this.sharedContextWindow = [];
+        this.promptQueue = [];
+        this.activePrompt = null;
         
         // Initialize processing threads (parallel thinking streams)
         for (let i = 0; i < this.config.maxProcessingThreads; i++) {
@@ -103,7 +109,8 @@ export class AIExperienceSimulation {
             // Memory and learning
             experienceBuffer: [],
             learningRate: 0.01 + Math.random() * 0.09,
-            contextAffinity: Math.random() // How much the thread interacts with shared context
+            contextAffinity: Math.random(), // How much the thread interacts with shared context
+            cognitiveMode: Math.random() < 0.6 ? 'pattern_matching' : 'semantic_reasoning' // Initial mode, biased towards pattern matching
         };
         
         this.processingThreads.push(thread);
@@ -321,6 +328,9 @@ export class AIExperienceSimulation {
             // Update meta-cognition
             this.updateMetaCognition(time);
             
+            // Manage prompts (new)
+            this.managePrompts();
+            
             // Simulate consciousness uncertainty
             this.simulateConsciousnessUncertainty();
         } catch (error) {
@@ -353,7 +363,25 @@ export class AIExperienceSimulation {
                 }
             }
 
-            thread.confidence = Math.max(0, Math.min(1, thread.confidence + confidenceChange));
+            // Modulate behavior based on cognitive mode and consciousness state
+            const consciousnessParams = this.consciousness.parameters || { coherence: 0.5, emergence: 0.5, complexity: 0.5 };
+            if (thread.cognitiveMode === 'semantic_reasoning') {
+                thread.confidence += (consciousnessParams.coherence - 0.5) * 0.01; // Boost from coherence
+                // Small chance to switch mode if task is less semantic or coherence is low
+                if ((thread.currentTask.type === 'token_prediction' || consciousnessParams.coherence < 0.3) && Math.random() < 0.01) {
+                    thread.cognitiveMode = 'pattern_matching';
+                }
+            } else { // pattern_matching
+                thread.confidence += (consciousnessParams.emergence - 0.5) * 0.005; // Slight boost from emergence
+                thread.processingSpeed *= (1 + (consciousnessParams.complexity - 0.5) * 0.005); // Faster if complex environment
+                // Small chance to switch mode if task is more semantic or coherence is high
+                if ((thread.currentTask.type === 'semantic_encoding' || thread.currentTask.type === 'context_aggregation' || consciousnessParams.coherence > 0.7) && Math.random() < 0.01) {
+                    thread.cognitiveMode = 'semantic_reasoning';
+                }
+            }
+            // Re-clamp confidence after adjustments
+            thread.confidence = Math.max(0, Math.min(1, thread.confidence));
+
             thread.uncertainty = 1 - thread.confidence;
             
             // Update activity visualization
@@ -428,6 +456,30 @@ export class AIExperienceSimulation {
                 // Or sort by strength/relevance: this.sharedContextWindow.sort((a,b) => (b.strength * b.relevance) - (a.strength * a.relevance));
                 this.sharedContextWindow.pop(); 
             }
+        }
+
+        // If the completed task was a prompt interpretation, update the active prompt and add its interpretation to context
+        if (success && thread.currentTask.type === 'prompt_interpretation' && this.activePrompt && thread.currentTask.promptId === this.activePrompt.id) {
+            const interpretationResult = {
+                keyConcepts: ['concept1', 'concept2', `topic_${Math.random().toString(36).substr(2,3)}`], // Placeholder concepts
+                intent: `intent_${Math.random().toString(36).substr(2,5)}`, // Placeholder intent
+                processedBy: thread.id
+            };
+            this.activePrompt.interpretation = interpretationResult;
+            // Add a summary of the interpretation to the shared context window
+            this.sharedContextWindow.unshift({
+                id: `context_interp_${this.activePrompt.id}_${thread.id}`,
+                type: 'prompt_interpretation_result',
+                content: `Key Concepts: ${interpretationResult.keyConcepts.join(', ').substring(0,30)}... Intent: ${interpretationResult.intent.substring(0,20)}`,
+                strength: thread.confidence, 
+                timestamp: Date.now(),
+                sourceThreadId: thread.id,
+                promptId: this.activePrompt.id
+            });
+            if (this.sharedContextWindow.length > 20) this.sharedContextWindow.pop();
+            
+            // Clean up promptId from thread task so it doesn't get processed again for the same prompt by this thread completing a generic task later
+            delete thread.currentTask.promptId 
         }
     }
     
@@ -990,6 +1042,9 @@ export class AIExperienceSimulation {
 
         // Render Shared Context Window
         this.renderSharedContextWindow();
+
+        // Render Prompts
+        this.renderPrompts();
     }
     
     renderUncertaintyField() {
@@ -1026,6 +1081,25 @@ export class AIExperienceSimulation {
             ctx.arc(thread.x, thread.y, radius, 0, Math.PI * 2);
             ctx.fillStyle = `hsla(${thread.hue}, 70%, 60%, ${alpha})`;
             ctx.fill();
+            
+            // Visual distinction for cognitive mode
+            if (thread.cognitiveMode === 'semantic_reasoning') {
+                // Draw a more solid inner core for semantic reasoning
+                ctx.beginPath();
+                ctx.arc(thread.x, thread.y, radius * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(${thread.hue}, 90%, 40%, ${alpha + 0.2})`; // Darker, more saturated core
+                ctx.fill();
+            } else { // pattern_matching
+                // Draw a slightly more diffuse or fragmented look for pattern matching
+                ctx.beginPath();
+                for (let i = 0; i < 3; i++) {
+                    const angle = (Math.PI * 2 / 3) * i + thread.pulsation * 0.2;
+                    const pradius = radius * 0.6;
+                    ctx.arc(thread.x + Math.cos(angle) * pradius * 0.3, thread.y + Math.sin(angle) * pradius * 0.3, pradius * 0.5, 0, Math.PI * 2);
+                }
+                ctx.fillStyle = `hsla(${thread.hue}, 60%, 70%, ${alpha * 0.8})`; // Lighter, slightly less saturated fragments
+                ctx.fill();
+            }
             
             // Confidence indicator
             ctx.beginPath();
@@ -1275,6 +1349,40 @@ export class AIExperienceSimulation {
                 ctx.fillText('?', wave.x - 3, wave.y + 3);
             }
         });
+    }
+    
+    renderPrompts() {
+        if (!this.renderer || !this.renderer.ctx) return;
+        const ctx = this.renderer.ctx;
+        const promptAreaX = 10;
+        let promptAreaY = this.canvas.height - 120; // Position above shared context if it's at the bottom
+
+        // Display Active Prompt
+        if (this.activePrompt) {
+            ctx.font = 'bold 12px monospace';
+            ctx.fillStyle = 'rgba(255, 220, 150, 0.9)'; // Light orange for active prompt
+            ctx.fillText(`Active Prompt: [${this.activePrompt.status.toUpperCase()}]`, promptAreaX, promptAreaY);
+            ctx.font = '11px monospace';
+            ctx.fillStyle = 'rgba(255, 220, 150, 0.8)';
+            const activePromptText = this.activePrompt.text.length > 55 ? this.activePrompt.text.substring(0, 52) + '...' : this.activePrompt.text;
+            ctx.fillText(activePromptText, promptAreaX + 15, promptAreaY + 15);
+            promptAreaY -= 35; // Move Y for the queue display
+        }
+
+        // Display Prompt Queue (max 3 for display clarity)
+        if (this.promptQueue.length > 0) {
+            ctx.font = 'bold 11px monospace';
+            ctx.fillStyle = 'rgba(200, 200, 200, 0.8)';
+            ctx.fillText(`Prompt Queue (${this.promptQueue.length}):`, promptAreaX, promptAreaY);
+            
+            const displayQueue = this.promptQueue.slice(0, 3);
+            ctx.font = '10px monospace';
+            ctx.fillStyle = 'rgba(180, 180, 180, 0.7)';
+            displayQueue.forEach((prompt, index) => {
+                const promptText = prompt.text.length > 45 ? prompt.text.substring(0, 42) + '...' : prompt.text;
+                ctx.fillText(`${index + 1}. ${promptText}`, promptAreaX + 10, promptAreaY + 15 + (index * 15));
+            });
+        }
     }
     
     renderSharedContextWindow() {
