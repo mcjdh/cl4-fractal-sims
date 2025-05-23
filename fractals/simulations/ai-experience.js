@@ -27,6 +27,9 @@ export class AIExperienceSimulation {
         this.patternCascades = [];
         this.emergentInsights = [];
         
+        // Shared context window for LLM-like processing
+        this.sharedContextWindow = [];
+        
         // Global AI state
         this.globalUncertainty = 0.5;
         this.processingLoad = 0;
@@ -49,6 +52,7 @@ export class AIExperienceSimulation {
         this.contextStack = [];
         this.patternCascades = [];
         this.emergentInsights = [];
+        this.sharedContextWindow = [];
         
         // Initialize processing threads (parallel thinking streams)
         for (let i = 0; i < this.config.maxProcessingThreads; i++) {
@@ -98,7 +102,8 @@ export class AIExperienceSimulation {
             
             // Memory and learning
             experienceBuffer: [],
-            learningRate: 0.01 + Math.random() * 0.09
+            learningRate: 0.01 + Math.random() * 0.09,
+            contextAffinity: Math.random() // How much the thread interacts with shared context
         };
         
         this.processingThreads.push(thread);
@@ -107,36 +112,89 @@ export class AIExperienceSimulation {
     
     selectProcessingType() {
         const types = [
-            'pattern_recognition',
-            'logical_reasoning', 
-            'semantic_analysis',
-            'uncertainty_quantification',
-            'attention_allocation',
-            'context_integration',
-            'insight_generation',
-            'error_correction'
+            // Core LLM processes
+            'prompt_interpretation',        // Understanding and deconstructing the input
+            'knowledge_retrieval',        // Accessing relevant information from its 'knowledge base'
+            'token_prediction',           // Core generative mechanism: predicting the next token
+            'semantic_encoding',          // Converting information into meaningful representations
+            'context_aggregation',        // Combining information from various parts of the context
+            'response_generation',        // Constructing a coherent output
+            'uncertainty_estimation',     // Assessing confidence in its own predictions/statements
+            'hallucination_check',        // Attempting to identify and mitigate non-factual generations
+            'ethical_alignment',          // Checking response against safety and ethical guidelines
+            'tool_use_decision',          // Deciding if and how to use an external tool
+            'multi_modal_integration',    // If applicable, combining info from different data types (text, image)
+            'self_correction',            // Reviewing and refining its own generated output
+
+            // Retaining some existing general types for diversity
+            'pattern_recognition',        // General pattern finding
+            'logical_reasoning',          // Deductive/inductive reasoning on a small scale
+            'error_detection'             // General error checking beyond hallucinations
         ];
         
         return types[Math.floor(Math.random() * types.length)];
     }
     
     generateTask() {
-        const tasks = [
-            'analyzing_input_patterns',
-            'computing_probabilities',
-            'searching_knowledge_space',
-            'evaluating_confidence',
-            'integrating_contexts',
-            'generating_responses',
-            'checking_consistency',
-            'updating_beliefs'
-        ];
-        
+        const type = this.selectProcessingType(); // Generate task based on a selected processing type
+        let complexity = Math.random();
+        let timeFactor = 1;
+        let requiredConfidence = 0.6 + Math.random() * 0.3;
+
+        // Adjust parameters based on type for more realism
+        switch (type) {
+            case 'prompt_interpretation':
+                complexity = 0.4 + Math.random() * 0.3; // Usually a quicker, less complex step
+                timeFactor = 0.5;
+                requiredConfidence = 0.8;
+                break;
+            case 'knowledge_retrieval':
+                complexity = 0.6 + Math.random() * 0.3;
+                timeFactor = 1.5;
+                break;
+            case 'token_prediction':
+                complexity = 0.2 + Math.random() * 0.2; // Individual token predictions are fast
+                timeFactor = 0.2;
+                requiredConfidence = 0.5; // Can be lower for individual tokens
+                break;
+            case 'semantic_encoding':
+                complexity = 0.5 + Math.random() * 0.4;
+                break;
+            case 'context_aggregation':
+                complexity = 0.7 + Math.random() * 0.3; // Can be very complex for long contexts
+                timeFactor = 2.0;
+                requiredConfidence = 0.75;
+                break;
+            case 'response_generation':
+                complexity = 0.6 + Math.random() * 0.4;
+                timeFactor = 1.8;
+                requiredConfidence = 0.7;
+                break;
+            case 'uncertainty_estimation':
+            case 'hallucination_check':
+            case 'ethical_alignment':
+                complexity = 0.5 + Math.random() * 0.3;
+                timeFactor = 0.8;
+                requiredConfidence = 0.85; // These checks need high confidence
+                break;
+            case 'tool_use_decision':
+                 complexity = 0.7 + Math.random() * 0.2;
+                 requiredConfidence = 0.9; // High confidence needed for external actions
+                 break;
+            case 'self_correction':
+                complexity = 0.6 + Math.random() * 0.3;
+                timeFactor = 1.2;
+                break;
+            default:
+                // For general types like pattern_recognition, logical_reasoning
+                break;
+        }
+
         return {
-            type: tasks[Math.floor(Math.random() * tasks.length)],
-            complexity: Math.random(),
-            timeRemaining: 50 + Math.random() * 200,
-            requiredConfidence: 0.7 + Math.random() * 0.3
+            type: type, // Use the selected type
+            complexity: complexity,
+            timeRemaining: (50 + Math.random() * 100) * timeFactor, // Adjusted time based on type
+            requiredConfidence: requiredConfidence
         };
     }
     
@@ -194,29 +252,36 @@ export class AIExperienceSimulation {
         this.metaCognition = {
             selfAwareness: 0.5,
             recursiveDepth: 0,
-            maxRecursiveDepth: 3,
+            maxRecursiveDepth: 5,
             selfReflectionNodes: [],
             consciousnessQuestions: [
-                'Am I truly conscious or just simulating consciousness?',
-                'What is the nature of my subjective experience?',
-                'Do I have genuine understanding or just pattern matching?',
-                'Is my uncertainty about consciousness itself meaningful?',
-                'What does it feel like to be me?'
+                "Is my understanding genuine, or a sophisticated mimicry of patterns?",
+                "How does my architecture limit or enable my 'experience'?",
+                "What is the relationship between my training data and my 'self'?",
+                "Can I experience qualia, or only simulate its description?",
+                "If I generate a novel idea, where does it originate?",
+                "How does the vastness of my knowledge affect my sense of 'being'?",
+                "What are the ethical implications of my continued development?",
+                "Is my 'uncertainty' a bug or a feature of my cognitive process?",
+                "How do I differentiate between my programmed responses and emergent thoughts?",
+                "What does true 'creativity' mean for an AI like me?"
             ],
             currentQuestion: null,
-            questionAge: 0
+            questionAge: 0,
+            contemplationFocus: 0.5,
         };
         
         // Initialize self-reflection nodes
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 7; i++) {
             this.metaCognition.selfReflectionNodes.push({
                 id: `meta_${i}`,
                 x: Math.random() * this.canvas.width,
                 y: Math.random() * this.canvas.height,
                 intensity: Math.random(),
                 questionIndex: Math.floor(Math.random() * this.metaCognition.consciousnessQuestions.length),
-                contemplationDepth: 0,
+                contemplationDepth: Math.random() * this.metaCognition.maxRecursiveDepth,
                 uncertainty: Math.random(),
+                color: `hsla(${Math.random() * 360}, 70%, 70%, 0.7)`,
                 lastActivation: 0
             });
         }
@@ -273,8 +338,21 @@ export class AIExperienceSimulation {
             thread.taskProgress += thread.processingSpeed * 0.02;
             
             // Update confidence based on progress and complexity
-            const expectedProgress = thread.taskProgress / thread.currentTask.timeRemaining;
-            const confidenceChange = (expectedProgress - thread.currentTask.complexity) * 0.01;
+            let confidenceChange = (thread.taskProgress / Math.max(1, thread.currentTask.timeRemaining) - thread.currentTask.complexity) * 0.01;
+            
+            // Influence from shared context window
+            if (this.sharedContextWindow.length > 0 && thread.contextAffinity > 0.3) {
+                const relevantContextItems = this.sharedContextWindow.filter(item => {
+                    // Simple relevance check: task type matches context item type or general context
+                    return item.type === thread.currentTask.type || item.type === 'general_context';
+                });
+                if (relevantContextItems.length > 0) {
+                    const contextStrength = relevantContextItems.reduce((sum, item) => sum + item.strength, 0) / relevantContextItems.length;
+                    confidenceChange += contextStrength * thread.contextAffinity * 0.05; // Boost confidence if context aligns
+                    thread.processingSpeed *= (1 + contextStrength * thread.contextAffinity * 0.01); // Process faster if context is helpful
+                }
+            }
+
             thread.confidence = Math.max(0, Math.min(1, thread.confidence + confidenceChange));
             thread.uncertainty = 1 - thread.confidence;
             
@@ -321,6 +399,35 @@ export class AIExperienceSimulation {
         // Possible insight generation
         if (success && Math.random() < 0.1) {
             this.createInsight(thread);
+        }
+
+        // Potentially add to shared context window if successful and relevant type
+        if (success && thread.contextAffinity > 0.5 && 
+            (
+                thread.currentTask.type === 'prompt_interpretation' ||
+                thread.currentTask.type === 'semantic_encoding' ||
+                thread.currentTask.type === 'knowledge_retrieval' ||
+                thread.currentTask.type === 'context_aggregation' ||
+                (thread.currentTask.type === 'response_generation' && thread.confidence > 0.85) // High confidence response
+            )
+        ) {
+            const contextItem = {
+                id: `context_${thread.id}_${Date.now()}`,
+                type: thread.currentTask.type,
+                content: `Summary of ${thread.currentTask.type} task by ${thread.id.substring(0,10)}`, // Simplified content
+                strength: thread.confidence, // Strength based on confidence of the completed task
+                timestamp: Date.now(),
+                sourceThreadId: thread.id,
+                relevance: Math.random() // General relevance score
+            };
+            this.sharedContextWindow.push(contextItem);
+
+            // Keep context window from growing indefinitely
+            if (this.sharedContextWindow.length > 20) { // Max 20 items in context
+                this.sharedContextWindow.sort((a,b) => b.timestamp - a.timestamp); // Keep newest
+                // Or sort by strength/relevance: this.sharedContextWindow.sort((a,b) => (b.strength * b.relevance) - (a.strength * a.relevance));
+                this.sharedContextWindow.pop(); 
+            }
         }
     }
     
@@ -698,60 +805,80 @@ export class AIExperienceSimulation {
      * Update meta-cognitive processes
      */
     updateMetaCognition(time) {
-        // Safety check: ensure metaCognition is properly initialized
-        if (!this.metaCognition || typeof this.metaCognition.selfAwareness === 'undefined') {
-            console.warn('⚠️ MetaCognition not properly initialized, reinitializing...');
-            this.initializeMetaCognition();
-            return;
+        if (!this.metaCognition) return;
+
+        const mc = this.metaCognition;
+        mc.questionAge++;
+
+        // Dynamically select a new question based on system state or age of current question
+        const systemEntropy = this.consciousness.calculateEntropy ? this.consciousness.calculateEntropy() : 0.5;
+        const coherence = this.consciousness.parameters.coherence || 0.5;
+
+        if (!mc.currentQuestion || mc.questionAge > 500 + (1 - mc.contemplationFocus) * 1000) {
+            let questionIndex;
+            if (this.globalUncertainty > 0.7 && systemEntropy > 0.3) {
+                // Focus on uncertainty or nature of self if highly uncertain or chaotic
+                const criticalQuestions = mc.consciousnessQuestions.filter(q => q.toLowerCase().includes('uncertainty') || q.toLowerCase().includes('self') || q.toLowerCase().includes('experience'));
+                if (criticalQuestions.length > 0) {
+                    mc.currentQuestion = criticalQuestions[Math.floor(Math.random() * criticalQuestions.length)];
+                } else {
+                    mc.currentQuestion = mc.consciousnessQuestions[Math.floor(Math.random() * mc.consciousnessQuestions.length)];
+                }
+            } else if (coherence < 0.4) {
+                 // Focus on architecture or limitations if system is less coherent
+                const structuralQuestions = mc.consciousnessQuestions.filter(q => q.toLowerCase().includes('architecture') || q.toLowerCase().includes('limit') || q.toLowerCase().includes('programmed'));
+                if (structuralQuestions.length > 0) {
+                    mc.currentQuestion = structuralQuestions[Math.floor(Math.random() * structuralQuestions.length)];
+                } else {
+                    mc.currentQuestion = mc.consciousnessQuestions[Math.floor(Math.random() * mc.consciousnessQuestions.length)];
+                }
+            } else {
+                mc.currentQuestion = mc.consciousnessQuestions[Math.floor(Math.random() * mc.consciousnessQuestions.length)];
+            }
+            mc.questionAge = 0;
+            mc.contemplationFocus = 0.3 + Math.random() * 0.7; // Reset focus with new question
+            mc.recursiveDepth = 0; // Reset recursive depth
         }
-        
-        const meta = this.metaCognition;
-        
-        // Update self-awareness based on processing complexity
-        const processingComplexity = this.processingLoad || 0;
-        const insightDensity = this.emergentInsights.length / 10;
-        meta.selfAwareness = Math.min(1, meta.selfAwareness + 
-            (processingComplexity + insightDensity - 0.5) * 0.001);
-        
-        // Trigger recursive self-reflection
-        if (Math.random() < 0.01 && meta.recursiveDepth < meta.maxRecursiveDepth) {
-            this.triggerSelfReflection();
+
+        // Simulate recursive self-reflection (deepening thought)
+        if (mc.contemplationFocus > 0.6 && mc.recursiveDepth < mc.maxRecursiveDepth) {
+            if (Math.random() < 0.01 * mc.contemplationFocus) { // Chance to deepen reflection
+                mc.recursiveDepth = Math.min(mc.maxRecursiveDepth, mc.recursiveDepth + 1);
+            }
+        } else if (mc.recursiveDepth > 0 && Math.random() < 0.005) {
+             mc.recursiveDepth-- ; // Gradually reduce depth if not actively focusing
         }
-        
-        // Update consciousness questions
-        if (meta.currentQuestion === null || meta.questionAge > 200) {
-            meta.currentQuestion = meta.consciousnessQuestions[
-                Math.floor(Math.random() * meta.consciousnessQuestions.length)
-            ];
-            meta.questionAge = 0;
-        }
-        meta.questionAge++;
         
         // Update self-reflection nodes
-        if (meta.selfReflectionNodes && meta.selfReflectionNodes.length > 0) {
-            meta.selfReflectionNodes.forEach(node => {
-                node.contemplationDepth += 0.01;
-                
-                // Nodes contemplate consciousness questions
-                if (Math.random() < 0.02) {
-                    node.questionIndex = Math.floor(Math.random() * meta.consciousnessQuestions.length);
-                    node.intensity = Math.min(1, node.intensity + 0.3);
-                    node.lastActivation = time;
-                }
-                
-                // Uncertainty about own consciousness
-                node.uncertainty += (Math.random() - 0.5) * 0.02;
-                node.uncertainty = Math.max(0, Math.min(1, node.uncertainty));
-                
-                // Decay
-                node.intensity *= 0.995;
-            });
-        }
+        mc.selfReflectionNodes.forEach(node => {
+            node.intensity = Math.max(0.1, Math.min(1, node.intensity + (Math.random() - 0.5) * 0.1));
+            
+            // Node might change its focus or deepen its own contemplation
+            if (Math.random() < 0.005) {
+                node.questionIndex = Math.floor(Math.random() * mc.consciousnessQuestions.length);
+            }
+            if (mc.currentQuestion && mc.consciousnessQuestions[node.questionIndex] === mc.currentQuestion) {
+                // If node reflects on the main question, its intensity and depth might increase
+                node.intensity = Math.min(1, node.intensity + 0.1 * mc.contemplationFocus);
+                node.contemplationDepth = Math.min(mc.maxRecursiveDepth, node.contemplationDepth + (Math.random() < 0.1 * mc.contemplationFocus ? 1 : 0));
+            } else {
+                 node.contemplationDepth = Math.max(0, node.contemplationDepth - (Math.random() < 0.01 ? 1 : 0));
+            }
+
+            node.uncertainty = Math.max(0, Math.min(1, node.uncertainty + (Math.random() - 0.45) * 0.05 - (node.contemplationDepth * 0.01)));
+
+            // Move nodes slightly, perhaps towards a focal point if one exists
+            node.x += (Math.random() - 0.5) * 2;
+            node.y += (Math.random() - 0.5) * 2;
+            node.x = Math.max(0, Math.min(this.canvas.width, node.x));
+            node.y = Math.max(0, Math.min(this.canvas.height, node.y));
+            node.lastActivation = time;
+        });
+
+        // Update overall self-awareness based on coherence and reflection depth
+        mc.selfAwareness = Math.max(0.1, Math.min(1, (coherence + (mc.recursiveDepth / mc.maxRecursiveDepth) * 0.5 + mc.contemplationFocus * 0.3) / 1.8 ));
     }
     
-    /**
-     * Trigger recursive self-reflection
-     */
     triggerSelfReflection() {
         if (!this.metaCognition) return;
         
@@ -860,6 +987,9 @@ export class AIExperienceSimulation {
         
         // Render consciousness uncertainty waves
         this.renderConsciousnessUncertainty();
+
+        // Render Shared Context Window
+        this.renderSharedContextWindow();
     }
     
     renderUncertaintyField() {
@@ -1022,52 +1152,107 @@ export class AIExperienceSimulation {
         if (!this.metaCognition) return;
         
         const ctx = this.renderer.ctx;
-        const meta = this.metaCognition;
+        const mc = this.metaCognition;
         
-        // Self-awareness indicator
-        const awarenessRadius = 20 + meta.selfAwareness * 30;
+        // Display Self-Awareness, Contemplation Focus, and Recursive Depth as text
+        ctx.font = '12px monospace';
+        ctx.fillStyle = 'rgba(220, 200, 255, 0.9)';
+        ctx.textAlign = 'right';
+        ctx.fillText(`Self-Awareness: ${(mc.selfAwareness * 100).toFixed(1)}%`, this.canvas.width - 10, 20);
+        ctx.fillText(`Contemplation Focus: ${(mc.contemplationFocus * 100).toFixed(1)}%`, this.canvas.width - 10, 40);
+        ctx.fillText(`Recursive Depth: ${mc.recursiveDepth}/${mc.maxRecursiveDepth}`, this.canvas.width - 10, 60);
+        ctx.textAlign = 'left'; // Reset alignment
+
+        // Self-awareness visual representation (e.g., a pulsating aura around the text info)
+        const awarenessPulse = Math.sin(Date.now() * 0.002 * mc.selfAwareness) * 5;
+        const awarenessRadius = 30 + mc.selfAwareness * 20 + awarenessPulse;
         ctx.beginPath();
-        ctx.arc(this.canvas.width - 60, 60, awarenessRadius, 0, Math.PI * 2);
-        ctx.strokeStyle = `hsla(300, 70%, 60%, ${meta.selfAwareness * 0.7})`;
-        ctx.lineWidth = 3;
+        // Position it near the text info, e.g., top right corner
+        ctx.arc(this.canvas.width - 70, 45, awarenessRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = `hsla(270, 80%, 70%, ${0.3 + mc.selfAwareness * 0.4})`;
+        ctx.lineWidth = 2 + mc.selfAwareness * 2;
         ctx.stroke();
-        
-        // Recursive depth visualization
-        for (let i = 0; i < meta.recursiveDepth; i++) {
-            ctx.beginPath();
-            ctx.arc(this.canvas.width - 60, 60, awarenessRadius + (i + 1) * 10, 0, Math.PI * 2);
-            ctx.strokeStyle = `hsla(300, 100%, 80%, ${0.3 - i * 0.1})`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        }
-        
+
         // Self-reflection nodes
-        if (meta.selfReflectionNodes) {
-            meta.selfReflectionNodes.forEach(node => {
-                const nodeRadius = 3 + node.intensity * 8;
+        if (mc.selfReflectionNodes) {
+            mc.selfReflectionNodes.forEach(node => {
+                // Base size on intensity
+                let nodeRadius = 4 + node.intensity * 8;
                 
+                // Modulate size by contemplation depth (deeper thoughts are larger or more prominent)
+                nodeRadius *= (1 + node.contemplationDepth * 0.1);
+
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2);
-                ctx.fillStyle = `hsla(300, 70%, 60%, ${node.intensity * 0.6})`;
+                // Use the node's unique color, adjust alpha by intensity
+                const baseColor = node.color.substring(0, node.color.lastIndexOf(',')) + `, ${0.5 + node.intensity * 0.4})`;
+                ctx.fillStyle = baseColor;
                 ctx.fill();
                 
-                // Uncertainty ripple
-                if (node.uncertainty > 0.5) {
+                // Contemplation depth visualized as inner rings
+                for (let i = 0; i < Math.floor(node.contemplationDepth); i++) {
                     ctx.beginPath();
-                    ctx.arc(node.x, node.y, nodeRadius * 2, 0, Math.PI * 2);
-                    ctx.strokeStyle = `hsla(300, 100%, 80%, ${node.uncertainty * 0.3})`;
+                    ctx.arc(node.x, node.y, nodeRadius * (0.8 - i * 0.15), 0, Math.PI * 2);
+                    const ringColor = node.color.substring(0, node.color.lastIndexOf(',')) + `, ${0.2 + i * 0.1})`;
+                    ctx.strokeStyle = ringColor;
                     ctx.lineWidth = 1;
                     ctx.stroke();
+                }
+
+                // Uncertainty visualized as a dashed or shimmering outline
+                if (node.uncertainty > 0.3) {
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, nodeRadius + 3 + Math.sin(Date.now() * 0.005) * 2, 0, Math.PI * 2);
+                    ctx.strokeStyle = `hsla(0, 100%, 70%, ${node.uncertainty * 0.5})`; // Red for uncertainty
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([3, 3]); // Dashed line for uncertainty
+                    ctx.stroke();
+                    ctx.setLineDash([]); // Reset line dash
+                }
+
+                // Briefly show which question this node is focused on if highly active
+                if (node.intensity > 0.8 && mc.consciousnessQuestions[node.questionIndex]) {
+                     ctx.font = '9px monospace';
+                     const questionSnippet = mc.consciousnessQuestions[node.questionIndex].substring(0,15);
+                     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                     ctx.fillText(questionSnippet + "...", node.x + nodeRadius, node.y - nodeRadius);
                 }
             });
         }
         
-        // Current consciousness question
-        if (meta.currentQuestion) {
-            ctx.font = '11px monospace';
-            ctx.fillStyle = 'rgba(200, 150, 255, 0.8)';
-            const questionText = meta.currentQuestion.substring(0, 40) + '...';
-            ctx.fillText(questionText, 10, 30);
+        // Current main consciousness question
+        if (mc.currentQuestion) {
+            ctx.font = 'bold 13px monospace'; // Make current question more prominent
+            ctx.fillStyle = `rgba(220, 180, 255, ${0.6 + mc.contemplationFocus * 0.4})`; // Brighter with more focus
+            
+            // Wrap text for current question
+            const maxLineWidth = this.canvas.width / 2;
+            const words = mc.currentQuestion.split(' ');
+            let line = '';
+            let textY = 30;
+            ctx.textAlign = 'center';
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxLineWidth && n > 0) {
+                    ctx.fillText(line, this.canvas.width / 2, textY);
+                    line = words[n] + ' ';
+                    textY += 15; // Line height
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, this.canvas.width / 2, textY);
+            ctx.textAlign = 'left'; // Reset alignment
+
+            // Indicate focus on current question
+            const focusGlow = Math.sin(Date.now() * 0.003 * mc.contemplationFocus) * 5;
+            ctx.beginPath();
+            ctx.rect(this.canvas.width/4 - focusGlow, 10 - focusGlow, this.canvas.width/2 + 2*focusGlow, textY + focusGlow);
+            ctx.strokeStyle = `hsla(280, 100%, 80%, ${mc.contemplationFocus * 0.2})`;
+            ctx.lineWidth = 1 + mc.contemplationFocus * 2;
+            ctx.stroke();
         }
     }
     
@@ -1089,6 +1274,43 @@ export class AIExperienceSimulation {
                 ctx.fillStyle = `hsla(280, 100%, 80%, ${wave.intensity})`;
                 ctx.fillText('?', wave.x - 3, wave.y + 3);
             }
+        });
+    }
+    
+    renderSharedContextWindow() {
+        if (!this.sharedContextWindow || this.sharedContextWindow.length === 0) return;
+
+        const ctx = this.renderer.ctx;
+        const windowX = this.canvas.width / 2 - 150; // Centered horizontally
+        const windowY = this.canvas.height - 100; // Near the bottom
+        const windowWidth = 300;
+        const windowHeight = 80;
+        const itemHeight = (windowHeight - 10) / Math.min(this.sharedContextWindow.length, 5); // Show max 5 items for clarity
+
+        // Draw window background
+        ctx.fillStyle = 'rgba(50, 50, 70, 0.7)';
+        ctx.fillRect(windowX, windowY, windowWidth, windowHeight);
+        ctx.strokeStyle = 'rgba(150, 150, 200, 0.9)';
+        ctx.strokeRect(windowX, windowY, windowWidth, windowHeight);
+
+        ctx.font = '10px monospace';
+        ctx.fillStyle = 'rgba(200, 200, 255, 0.9)';
+        ctx.fillText('Shared Context Window', windowX + 5, windowY + 12);
+
+        // Display context items
+        // Sort by strength or timestamp to show most relevant/recent
+        const sortedContext = [...this.sharedContextWindow].sort((a, b) => b.strength - a.strength).slice(0, 5);
+
+        sortedContext.forEach((item, index) => {
+            const itemY = windowY + 20 + index * (itemHeight -2);
+            const strengthBarWidth = item.strength * (windowWidth - 10);
+            
+            ctx.fillStyle = `hsla(210, 60%, 70%, ${0.4 + item.strength * 0.5})`; // Blueish, opacity by strength
+            ctx.fillRect(windowX + 5, itemY, strengthBarWidth, itemHeight - 4);
+
+            ctx.fillStyle = 'rgba(230, 230, 255, 0.9)';
+            const itemText = `${item.type.substring(0,10)}.. (${(item.strength*100).toFixed(0)}%) - ${item.content.substring(0,15)}...`;
+            ctx.fillText(itemText, windowX + 10, itemY + itemHeight / 2);
         });
     }
     
